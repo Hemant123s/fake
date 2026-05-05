@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VeriScan AI — News Integrity Suite</title>
+<meta name="description" content="AI-powered fake news detection using TF-IDF and Logistic Regression. Analyze articles and live headlines instantly.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050710;
+  --surface:rgba(255,255,255,.05);
+  --surface2:rgba(255,255,255,.09);
+  --border:rgba(255,255,255,.1);
+  --text:#e8eaed;
+  --muted:rgba(255,255,255,.5);
+  --accent:#818cf8;
+  --accent2:#34d399;
+  --danger:#f87171;
+  --glow-real:rgba(52,211,153,.3);
+  --glow-fake:rgba(248,113,113,.3);
+  --gradient:linear-gradient(135deg,#818cf8,#c084fc,#f472b6);
+  --glass:rgba(255,255,255,.06);
+  --glass-border:rgba(255,255,255,.13);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{overscroll-behavior-y:none}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Floating Bubble Orbs ── */
+.bg-grid{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;
+  animation:orbFloat ease-in-out infinite alternate;
+}
+.orb1{width:520px;height:520px;background:radial-gradient(circle,#818cf8,transparent 70%);top:-120px;left:-120px;animation-duration:14s}
+.orb2{width:420px;height:420px;background:radial-gradient(circle,#c084fc,transparent 70%);top:30%;right:-100px;animation-duration:18s;animation-delay:-4s}
+.orb3{width:380px;height:380px;background:radial-gradient(circle,#34d399,transparent 70%);bottom:-80px;left:25%;animation-duration:16s;animation-delay:-8s}
+.orb4{width:300px;height:300px;background:radial-gradient(circle,#f472b6,transparent 70%);bottom:10%;right:15%;animation-duration:12s;animation-delay:-2s}
+.orb5{width:240px;height:240px;background:radial-gradient(circle,#38bdf8,transparent 70%);top:50%;left:40%;animation-duration:20s;animation-delay:-10s;opacity:.3}
+@keyframes orbFloat{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(30px,-40px) scale(1.08)}
+  100%{transform:translate(-20px,20px) scale(.95)}
+}
+
+/* ── Bubble Particles ── */
+.particle{position:fixed;border-radius:50%;pointer-events:none;z-index:0;opacity:0;
+  box-shadow:inset 0 0 8px rgba(255,255,255,.2),0 0 12px currentColor;
+  animation:floatUp linear infinite}
+@keyframes floatUp{
+  0%{opacity:0;transform:translateY(100vh) scale(0)}
+  8%{opacity:.7}
+  92%{opacity:.7}
+  100%{opacity:0;transform:translateY(-10vh) scale(1.2)}
+}
+
+/* ── Layout ── */
+.container{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:20px 24px}
+
+/* ── Header ── */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
+.logo-group{display:flex;align-items:center;gap:14px}
+.logo-icon{
+  width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  background:var(--gradient);font-size:22px;font-weight:900;color:#fff;
+  box-shadow:0 4px 20px rgba(129,140,248,.3);
+  animation:logoPulse 3s ease-in-out infinite;
+}
+@keyframes logoPulse{0%,100%{box-shadow:0 4px 20px rgba(129,140,248,.3)}50%{box-shadow:0 4px 30px rgba(129,140,248,.5)}}
+.logo-text h1{font-size:22px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-text p{font-size:12px;color:var(--muted);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.header-badge{
+  padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(52,211,153,.1);color:var(--accent2);border:1px solid rgba(52,211,153,.2);
+  display:flex;align-items:center;gap:6px;
+}
+.header-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent2);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Hero ── */
+.hero{
+  text-align:center;padding:52px 20px 40px;
+  background:radial-gradient(ellipse 900px 400px at 50% 0%,rgba(129,140,248,.11),transparent);
+  border-bottom:1px solid var(--border);margin-bottom:28px;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;padding:6px 16px;
+  border-radius:20px;background:rgba(129,140,248,.1);border:1px solid rgba(129,140,248,.2);
+  font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.5px;text-transform:uppercase;
+  margin-bottom:22px;animation:fadeDown .6s ease;
+}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.hero h1{
+  font-size:clamp(36px,6vw,72px);font-weight:900;line-height:1.1;
+  background:linear-gradient(135deg,#e8eaed 0%,#818cf8 40%,#f472b6 70%,#34d399 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:18px;animation:fadeDown .7s ease;
+}
+.hero p{
+  font-size:clamp(14px,2vw,18px);color:var(--muted);max-width:600px;
+  margin:0 auto 32px;line-height:1.7;animation:fadeDown .8s ease;
+}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeDown .9s ease;margin-bottom:22px}
+.hero-stats{
+  display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
+  animation:fadeDown 1s ease;
+}
+.hero-stat{text-align:center}
+.hero-stat strong{display:block;font-size:28px;font-weight:900;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:4px;display:block}
+
+/* ── Indian News Tabs ── */
+.india-bar{
+  display:flex;gap:10px;flex-wrap:wrap;padding:16px 20px;
+  background:linear-gradient(90deg,rgba(255,153,51,.06),rgba(255,255,255,.02),rgba(19,136,8,.06));
+  border:1px solid rgba(255,153,51,.15);border-radius:16px;margin-bottom:24px;
+  align-items:center;
+}
+.india-bar-label{font-size:11px;font-weight:700;color:rgba(255,153,51,.9);text-transform:uppercase;letter-spacing:.8px;margin-right:4px}
+.india-chip{
+  padding:7px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  background:rgba(255,153,51,.08);border:1px solid rgba(255,153,51,.2);color:#fed7aa;
+  cursor:pointer;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:5px;
+}
+.india-chip:hover{background:rgba(255,153,51,.18);border-color:rgba(255,153,51,.4);transform:translateY(-1px)}
+
+/* ── Stats Bar ── */
+.stats-bar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.stat-card{
+  flex:1;min-width:130px;padding:14px 16px;border-radius:18px;
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(20px) saturate(150%);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  box-shadow:0 4px 20px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.1);
+  transition:transform .25s,box-shadow .25s;
+}
+.stat-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.15)}
+.stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:900;letter-spacing:-1px}
+.stat-value.gradient{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── Main Grid ── */
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
+@media(max-width:960px){.main-grid{grid-template-columns:1fr}}
+
+/* ── Glass Panel (bubble style) ── */
+.panel{
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:22px;padding:20px 22px;
+  backdrop-filter:blur(24px) saturate(160%) brightness(1.05);
+  -webkit-backdrop-filter:blur(24px) saturate(160%) brightness(1.05);
+  box-shadow:0 8px 32px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1);
+  transition:transform .25s,box-shadow .25s,border-color .25s;
+  position:relative;overflow:hidden;
+}
+.panel::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);
+}
+.panel:hover{
+  transform:translateY(-3px);
+  box-shadow:0 16px 48px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.15);
+  border-color:rgba(255,255,255,.2);
+}
+.panel-title{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.panel-title h2{font-size:16px;font-weight:700}
+.panel-title .icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.icon-analyze{background:rgba(129,140,248,.15);color:var(--accent)}
+.icon-live{background:rgba(192,132,252,.15);color:#c084fc}
+.icon-history{background:rgba(52,211,153,.15);color:var(--accent2)}
+
+/* ── Textarea ── */
+textarea{
+  width:100%;min-height:160px;padding:18px;border-radius:18px;border:1px solid var(--glass-border);
+  background:rgba(0,0,0,.35);color:var(--text);font-size:14px;font-family:inherit;
+  resize:vertical;outline:none;transition:border-color .2s,box-shadow .2s;line-height:1.7;
+  backdrop-filter:blur(8px);
+}
+textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(129,140,248,.2),0 0 20px rgba(129,140,248,.1)}
+textarea::placeholder{color:var(--muted)}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.btn{
+  padding:12px 22px;border-radius:50px;border:none;font-weight:700;font-size:13px;
+  cursor:pointer;display:flex;align-items:center;gap:8px;
+  transition:transform .2s,box-shadow .2s;font-family:inherit;letter-spacing:.2px;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn:active{transform:translateY(0) scale(.97)}
+.btn-primary{
+  background:var(--gradient);color:#fff;
+  box-shadow:0 4px 20px rgba(129,140,248,.4),0 0 40px rgba(129,140,248,.15);
+}
+.btn-primary:hover{box-shadow:0 8px 32px rgba(129,140,248,.55),0 0 60px rgba(192,132,252,.2)}
+.btn-ghost{
+  background:var(--glass);color:var(--text);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(12px);
+}
+.btn-ghost:hover{background:rgba(255,255,255,.12)}
+
+/* ── Search Row ── */
+.search-row{display:flex;gap:10px;margin-top:14px}
+.search-input{
+  flex:1;padding:12px 18px;border-radius:50px;border:1px solid var(--glass-border);
+  background:rgba(0,0,0,.35);color:var(--text);font-size:13px;outline:none;font-family:inherit;
+  backdrop-filter:blur(8px);
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-input:focus{border-color:#c084fc;box-shadow:0 0 0 3px rgba(192,132,252,.15)}
+.search-input::placeholder{color:var(--muted)}
+
+/* ── Result Card ── */
+.result-box{margin-top:18px;animation:slideIn .35s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.result-card{
+  display:flex;align-items:center;gap:16px;padding:18px;border-radius:16px;
+  border:1px solid var(--border);transition:all .3s;
+}
+.result-card.real{background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.2);box-shadow:0 4px 20px var(--glow-real)}
+.result-card.fake{background:rgba(248,113,113,.06);border-color:rgba(248,113,113,.2);box-shadow:0 4px 20px var(--glow-fake)}
+.result-card.loading{background:var(--surface);border-color:var(--border)}
+.result-badge{
+  min-width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:800;flex-shrink:0;
+}
+.badge-real{background:rgba(52,211,153,.12);color:var(--accent2)}
+.badge-fake{background:rgba(248,113,113,.12);color:var(--danger)}
+.badge-load{background:var(--surface2);color:var(--accent);animation:spin 1.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.result-info h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.result-info p{font-size:12px;color:var(--muted)}
+
+/* ── Divider ── */
+.divider{height:1px;background:var(--border);margin:20px 0}
+
+/* ── News Cards (sidebar) ── */
+.sidebar-scroll{display:flex;flex-direction:column;gap:12px;max-height:680px;overflow-y:auto;padding-right:4px}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+.news-card{
+  display:flex;gap:12px;padding:12px;border-radius:14px;
+  background:rgba(255,255,255,.02);border:1px solid var(--border);
+  cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s;
+}
+.news-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.15);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.news-thumb{width:100px;height:68px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#111}
+.news-body{flex:1;min-width:0}
+.news-body h4{font-size:13px;font-weight:700;line-height:1.4;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-body p{font-size:11px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-meta{display:flex;align-items:center;gap:8px;margin-top:6px}
+.news-tag{
+  padding:3px 8px;border-radius:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+}
+.tag-real{background:rgba(52,211,153,.12);color:var(--accent2)}
+.tag-fake{background:rgba(248,113,113,.12);color:var(--danger)}
+.news-link{font-size:10px;color:var(--muted);text-decoration:underline;cursor:pointer}
+
+/* ── History (sidebar) ── */
+.history-item{
+  padding:10px 14px;border-radius:10px;background:rgba(255,255,255,.02);
+  border:1px solid var(--border);margin-bottom:8px;
+  animation:slideIn .3s ease;
+}
+.history-label{font-weight:700;font-size:12px}
+.history-text{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Empty State ── */
+.empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:10px;opacity:.5}
+
+/* ── Topic Chips ── */
+.topic-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chip{
+  padding:7px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px;
+}
+.chip:hover{background:rgba(129,140,248,.15);border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+
+/* ── External Links ── */
+.links-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:16px}
+.link-card{
+  display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border);
+  text-decoration:none;color:var(--text);transition:all .2s;
+}
+.link-card:hover{border-color:rgba(255,255,255,.15);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.link-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.link-name{font-size:13px;font-weight:700}
+.link-desc{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── How It Works (bubble cards) ── */
+.how-section{margin-top:56px}
+.how-section h2{font-size:24px;font-weight:900;margin-bottom:8px}
+.how-section .sub{font-size:14px;color:var(--muted);margin-bottom:28px}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.step-card{
+  padding:32px 26px;border-radius:28px;
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(20px) saturate(150%);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  box-shadow:0 4px 24px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.1);
+  text-align:center;transition:all .3s;position:relative;overflow:hidden;
+}
+.step-card:hover{border-color:rgba(129,140,248,.35);transform:translateY(-6px) scale(1.02);box-shadow:0 16px 48px rgba(0,0,0,.4),0 0 40px rgba(129,140,248,.1),inset 0 1px 0 rgba(255,255,255,.15)}
+.step-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 120px 80px at 50% 0%,rgba(255,255,255,.04),transparent);
+}
+.step-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:var(--gradient);opacity:0;transition:opacity .3s;border-radius:24px 24px 0 0;
+}
+.step-card:hover::after{opacity:1}
+.step-num{
+  width:36px;height:36px;border-radius:50%;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(129,140,248,.12);color:var(--accent);font-weight:800;font-size:14px;
+}
+.step-card h3{font-size:14px;font-weight:700;margin-bottom:6px}
+.step-card p{font-size:12px;color:var(--muted);line-height:1.5}
+
+.video-box{
+  margin-top:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);
+  background:var(--surface);position:relative;
+}
+.video-box video{width:100%;display:block;border-radius:16px}
+.video-placeholder{
+  padding:40px 20px;text-align:center;color:var(--muted);
+  background:linear-gradient(135deg,rgba(129,140,248,.06),rgba(192,132,252,.04));
+}
+.video-placeholder .play-icon{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--gradient);font-size:24px;color:#fff;
+  box-shadow:0 4px 20px rgba(129,140,248,.3);
+  cursor:pointer;transition:transform .2s;
+}
+.video-placeholder .play-icon:hover{transform:scale(1.1)}
+
+/* ── India bar mobile ── */
+@media(max-width:640px){
+  .india-bar{padding:10px 14px;gap:7px}
+  .hero h1{font-size:clamp(28px,8vw,48px)}
+  .hero{padding:48px 16px 36px}
+  .hero-stats{gap:20px}
+  .hero-btns{flex-direction:column;align-items:center}
+  .main-grid{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:1fr 1fr;display:grid}
+  .header{flex-wrap:wrap;gap:10px}
+  .links-grid{grid-template-columns:1fr 1fr}
+  .steps-grid{grid-template-columns:1fr 1fr}
+  .container{padding:16px 16px}
+  .panel{padding:20px 18px}
+}
+@media(max-width:480px){
+  .steps-grid{grid-template-columns:1fr}
+  .links-grid{grid-template-columns:1fr}
+  .stat-card{min-width:calc(50% - 6px)}
+  .logo-text h1{font-size:18px}
+  .hero h1{font-size:clamp(24px,7vw,40px)}
+}
+/* ── Scroll Reveal ── */
+.reveal{
+  opacity:0;transform:translateY(36px);transition:opacity .7s cubic-bezier(.22,1,.36,1),transform .7s cubic-bezier(.22,1,.36,1);
+}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:.1s}
+.reveal-delay-2{transition-delay:.2s}
+.reveal-delay-3{transition-delay:.3s}
+.reveal-delay-4{transition-delay:.4s}
+
+/* ── Interactive Particle Canvas ── */
+#particleCanvas{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  width:100%;height:100%;
+}
+
+/* ── Form Responsiveness (moderate) ── */
+.search-row{flex-wrap:wrap}
+.search-row .search-input{min-width:180px}
+.btn-row{flex-wrap:wrap}
+@media(max-width:768px){
+  .search-row{flex-direction:column}
+  .search-row .search-input{border-radius:14px}
+  .search-row .btn{border-radius:14px;justify-content:center}
+  textarea{min-height:120px}
+  .btn-row .btn{flex:1;min-width:120px;justify-content:center}
+  .panel{padding:18px}
+}
+@media(max-width:480px){
+  .search-row .search-input,.search-row .btn{width:100%}
+  .topic-chips{gap:6px}
+  .chip{padding:6px 11px;font-size:10px}
+  .india-chip{padding:5px 10px;font-size:10px}
+  textarea{font-size:13px}
+}
+
+/* ── Features Strip ── */
+.features-strip{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin:56px 0;
+}
+.feat-card{
+  padding:26px 24px;border-radius:22px;
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:flex-start;gap:14px;
+  transition:transform .25s,box-shadow .25s;
+  box-shadow:0 4px 20px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.feat-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(0,0,0,.35)}
+.feat-icon{
+  width:44px;height:44px;border-radius:14px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;flex-shrink:0;
+}
+.feat-body h4{font-size:14px;font-weight:700;margin-bottom:5px}
+.feat-body p{font-size:12px;color:var(--muted);line-height:1.55}
+
+/* ── Enhanced Footer ── */
+.footer-inner{
+  display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center;
+  padding:28px 0 16px;border-top:1px solid var(--glass-border);
+  margin-top:40px;
+}
+.footer-brand strong{font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.footer-brand p{font-size:11px;color:var(--muted);margin-top:4px}
+.footer-links{display:flex;gap:16px;flex-wrap:wrap}
+.footer-links a{font-size:11px;color:var(--muted);text-decoration:none;transition:color .2s}
+.footer-links a:hover{color:var(--accent)}
+@media(max-width:600px){.footer-inner{grid-template-columns:1fr}.footer-links{justify-content:flex-start}}
+</style>
+</head>
+<body>
+
+<div class="bg-grid">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="orb orb4"></div>
+  <div class="orb orb5"></div>
+</div>
+<canvas id="particleCanvas" aria-hidden="true"></canvas>
+<div id="particles"></div>
+
+<div class="container">
+  <!-- Header -->
+  <header class="header" id="header">
+    <div class="logo-group">
+      <div class="logo-icon">VS</div>
+      <div class="logo-text">
+        <h1>VeriScan AI</h1>
+        <p>News Integrity Suite</p>
+      </div>
+    </div>
+    <div class="header-badge">Model Active — 98.7% Accuracy</div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">🤖 AI-Powered &bull; 98.8% Accurate &bull; Live Headlines</div>
+    <h1>Detect Fake News<br>Instantly with AI</h1>
+    <p>Paste any article or search live headlines — our ML model classifies Real vs Fake in milliseconds using TF-IDF &amp; Logistic Regression trained on 44,000+ articles.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary" onclick="document.getElementById('newsInput').focus()">⚡ Analyze Article</button>
+      <button class="btn btn-ghost" onclick="quickSearch('india')">📡 Scan Live News</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><strong>44,000+</strong><span>Articles Trained</span></div>
+      <div class="hero-stat"><strong>98.8%</strong><span>Accuracy</span></div>
+      <div class="hero-stat"><strong>5</strong><span>Live Sources</span></div>
+      <div class="hero-stat"><strong>Real-time</strong><span>Detection</span></div>
+    </div>
+  </section>
+
+  <!-- INDIA NEWS BAR -->
+  <div class="india-bar">
+    <span class="india-bar-label">🇮🇳 India</span>
+    <span class="india-chip" onclick="quickSearch('india today')">📰 India Today</span>
+    <a class="india-chip" href="https://www.ndtv.com" target="_blank" rel="noopener">📺 NDTV</a>
+    <a class="india-chip" href="https://timesofindia.indiatimes.com" target="_blank" rel="noopener">🗞️ Times of India</a>
+    <a class="india-chip" href="https://www.thehindu.com" target="_blank" rel="noopener">📖 The Hindu</a>
+    <a class="india-chip" href="https://indianexpress.com" target="_blank" rel="noopener">📑 Indian Express</a>
+    <span class="india-chip" onclick="quickSearch('bollywood')">🎬 Bollywood</span>
+    <span class="india-chip" onclick="quickSearch('ipl 2026')">🏏 IPL 2026</span>
+    <span class="india-chip" onclick="quickSearch('modi')">🏛️ Politics</span>
+    <span class="india-chip" onclick="quickSearch('bse sensex')">📈 Markets</span>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar reveal" id="statsBar">
+    <div class="stat-card"><div class="stat-label">Total Scans</div><div class="stat-value gradient" id="statTotal">0</div></div>
+    <div class="stat-card"><div class="stat-label">Real Detected</div><div class="stat-value" id="statReal" style="color:var(--accent2)">0</div></div>
+    <div class="stat-card"><div class="stat-label">Fake Detected</div><div class="stat-value" id="statFake" style="color:var(--danger)">0</div></div>
+    <div class="stat-card"><div class="stat-label">Live Articles</div><div class="stat-value" id="statLive" style="color:var(--accent)">0</div></div>
+    <div class="stat-card" style="min-width:160px">
+      <div class="stat-label">Real vs Fake</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div style="flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden">
+          <div id="realBar" style="height:100%;width:50%;background:var(--accent2);border-radius:4px;transition:width .5s"></div>
+        </div>
+        <span id="realPct" style="font-size:11px;color:var(--accent2);font-weight:700">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="main-grid reveal">
+    <!-- Left Panel -->
+    <div style="display:flex;flex-direction:column;gap:24px">
+      <!-- Analyze Panel -->
+      <div class="panel">
+        <div class="panel-title"><div class="icon icon-analyze">🔍</div><h2>Analyze Article</h2></div>
+        <textarea id="newsInput" placeholder="Paste a news headline or article body here to verify its authenticity..."></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="btnCheck" onclick="checkManual()">⚡ Analyze Now</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('newsInput').value=''">✕ Clear</button>
+        </div>
+        <div id="manualResult"></div>
+      </div>
+
+      <!-- Live Search Panel -->
+      <div class="panel">
+        <div class="panel-title"><div class="icon icon-live">📡</div><h2>Live News Scanner</h2></div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Search real-time headlines and auto-verify each article with our ML model.</p>
+        <div class="search-row">
+          <input class="search-input" id="queryInput" type="text" placeholder="Search topics: india, technology, sports..." onkeydown="if(event.key==='Enter')checkLive()">
+          <button class="btn btn-primary" onclick="checkLive()">🔎 Search</button>
+        </div>
+        <div class="topic-chips">
+          <span class="chip" onclick="quickSearch('india')">🇮🇳 India</span>
+          <span class="chip" onclick="quickSearch('technology')">💻 Technology</span>
+          <span class="chip" onclick="quickSearch('cricket')">🏏 Cricket</span>
+          <span class="chip" onclick="quickSearch('politics')">🏛️ Politics</span>
+          <span class="chip" onclick="quickSearch('business')">📈 Business</span>
+          <span class="chip" onclick="quickSearch('health')">🏥 Health</span>
+          <span class="chip" onclick="quickSearch('science')">🔬 Science</span>
+          <span class="chip" onclick="quickSearch('world')">🌍 World</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside style="display:flex;flex-direction:column;gap:24px">
+      <!-- Live Headlines -->
+      <div class="panel">
+        <div class="panel-title"><div class="icon icon-live">📰</div><h2>Live Headlines</h2></div>
+        <div class="sidebar-scroll" id="newsList"></div>
+        <div id="newsEmpty" class="empty"><div class="empty-icon">⟳</div>Loading India headlines...</div>
+      </div>
+      <!-- Real/Fake Breakdown -->
+      <div class="panel">
+        <div class="panel-title"><div class="icon icon-history">📊</div><h2>Real vs Fake Breakdown</h2></div>
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+          <div style="position:relative;width:80px;height:80px;flex-shrink:0">
+            <svg viewBox="0 0 36 36" style="width:80px;height:80px;transform:rotate(-90deg)">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(248,113,113,.2)" stroke-width="4"/>
+              <circle id="donutReal" cx="18" cy="18" r="15" fill="none" stroke="#34d399" stroke-width="4" stroke-dasharray="0 94" stroke-linecap="round" style="transition:stroke-dasharray .6s"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--accent2)" id="donutPct">—</div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
+              <span style="color:var(--accent2)">✓ Real</span><span id="donutRealN" style="font-weight:700;color:var(--accent2)">0</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(52,211,153,.12);margin-bottom:10px;overflow:hidden">
+              <div id="realBarD" style="height:100%;width:0%;background:var(--accent2);border-radius:3px;transition:width .5s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
+              <span style="color:var(--danger)">✕ Fake</span><span id="donutFakeN" style="font-weight:700;color:var(--danger)">0</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(248,113,113,.12);overflow:hidden">
+              <div id="fakeBarD" style="height:100%;width:0%;background:var(--danger);border-radius:3px;transition:width .5s"></div>
+            </div>
+          </div>
+        </div>
+        <div id="historyList"><div class="empty"><div class="empty-icon">🕐</div>No scans yet</div></div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- External News Sources -->
+  <div class="panel reveal" style="margin-top:32px">
+    <div class="panel-title"><div class="icon" style="background:rgba(248,113,113,.12);color:var(--danger)">🔗</div><h2>Verify on Trusted Sources</h2></div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Cross-check news articles on these trusted fact-checking and news platforms.</p>
+    <div class="links-grid">
+      <a class="link-card" href="https://www.google.com/search?q=fact+check" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(66,133,244,.12);color:#4285f4">G</div>
+        <div><div class="link-name">Google News</div><div class="link-desc">Search & verify headlines</div></div>
+      </a>
+      <a class="link-card" href="https://www.snopes.com" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(52,211,153,.12);color:var(--accent2)">S</div>
+        <div><div class="link-name">Snopes</div><div class="link-desc">Fact-checking since 1994</div></div>
+      </a>
+      <a class="link-card" href="https://www.politifact.com" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(192,132,252,.12);color:#c084fc">P</div>
+        <div><div class="link-name">PolitiFact</div><div class="link-desc">Political fact-checking</div></div>
+      </a>
+      <a class="link-card" href="https://www.altnews.in" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(248,113,113,.12);color:var(--danger)">A</div>
+        <div><div class="link-name">Alt News</div><div class="link-desc">India fact-check portal</div></div>
+      </a>
+      <a class="link-card" href="https://factly.in" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(129,140,248,.12);color:var(--accent)">F</div>
+        <div><div class="link-name">Factly</div><div class="link-desc">Data-driven fact-checking</div></div>
+      </a>
+      <a class="link-card" href="https://www.reuters.com/fact-check" target="_blank" rel="noopener">
+        <div class="link-icon" style="background:rgba(255,255,255,.08);color:var(--text)">R</div>
+        <div><div class="link-name">Reuters Fact Check</div><div class="link-desc">Global verification team</div></div>
+      </a>
+    </div>
+  </div>
+
+  <!-- How It Works -->
+  <div class="how-section reveal">
+    <h2 style="background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">🎬 See It In Action</h2>
+    <p class="sub">Click the cards below to run a live test — watch the AI decide Real or Fake in real time.</p>
+    <div class="steps-grid">
+      <div class="step-card" style="cursor:pointer" onclick="demoTest('real')" id="demoCardReal">
+        <div class="step-num" style="font-size:22px;width:48px;height:48px">📰</div>
+        <h3>Test Real News</h3>
+        <p>Click to send a genuine government policy article to the AI and see the verdict.</p>
+        <div id="demoResReal" style="margin-top:12px"></div>
+      </div>
+      <div class="step-card" style="cursor:pointer" onclick="demoTest('fake')" id="demoCardFake">
+        <div class="step-num" style="font-size:22px;width:48px;height:48px;background:rgba(248,113,113,.12);color:var(--danger)">⚠️</div>
+        <h3>Test Fake News</h3>
+        <p>Click to send a sensational fake headline to the AI and see if it gets caught.</p>
+        <div id="demoResFake" style="margin-top:12px"></div>
+      </div>
+      <div class="step-card" style="cursor:pointer" onclick="demoTest('live')" id="demoCardLive">
+        <div class="step-num" style="font-size:22px;width:48px;height:48px;background:rgba(192,132,252,.12);color:#c084fc">📡</div>
+        <h3>Fetch Live Headlines</h3>
+        <p>Click to pull the latest India headlines and auto-classify each one instantly.</p>
+        <div id="demoResLive" style="margin-top:12px"></div>
+      </div>
+      <div class="step-card">
+        <div class="step-num" style="font-size:22px;width:48px;height:48px;background:rgba(52,211,153,.12);color:var(--accent2)">🧠</div>
+        <h3>98.8% Accuracy</h3>
+        <p>Trained on 44,898 articles using TF-IDF bigrams + Logistic Regression with max 50k features.</p>
+        <div style="margin-top:12px;height:6px;border-radius:3px;background:rgba(52,211,153,.12);overflow:hidden">
+          <div style="height:100%;width:98.8%;background:var(--accent2);border-radius:3px"></div>
+        </div>
+        <div style="font-size:11px;color:var(--accent2);font-weight:700;margin-top:6px">98.8% on test set</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why VeriScan Features -->
+  <section class="features-strip reveal">
+    <div class="feat-card reveal reveal-delay-1">
+      <div class="feat-icon" style="background:rgba(129,140,248,.12);color:var(--accent)">🤖</div>
+      <div class="feat-body">
+        <h4>ML-Powered Detection</h4>
+        <p>Logistic Regression trained on 44,898 real &amp; fake articles with 98.8% accuracy.</p>
+      </div>
+    </div>
+    <div class="feat-card reveal reveal-delay-2">
+      <div class="feat-icon" style="background:rgba(52,211,153,.12);color:var(--accent2)">⚡</div>
+      <div class="feat-body">
+        <h4>Instant Results</h4>
+        <p>Predictions in under 50ms. TF-IDF vectorization + model inference is blazing fast.</p>
+      </div>
+    </div>
+    <div class="feat-card reveal reveal-delay-3">
+      <div class="feat-icon" style="background:rgba(248,113,113,.12);color:var(--danger)">🇮🇳</div>
+      <div class="feat-body">
+        <h4>India-Focused Sources</h4>
+        <p>Scans NDTV, India Today, The Hindu &amp; more for real-time Indian news verification.</p>
+      </div>
+    </div>
+    <div class="feat-card reveal reveal-delay-4">
+      <div class="feat-icon" style="background:rgba(192,132,252,.12);color:#c084fc">🔒</div>
+      <div class="feat-body">
+        <h4>Open &amp; Transparent</h4>
+        <p>No black-box AI. Uses interpretable TF-IDF features so you understand why it decided.</p>
+      </div>
+    </div>
+    <div class="feat-card reveal reveal-delay-1">
+      <div class="feat-icon" style="background:rgba(56,189,248,.12);color:#38bdf8">📡</div>
+      <div class="feat-body">
+        <h4>80,000+ Live Sources</h4>
+        <p>NewsAPI pulls headlines from thousands of global publishers updated every hour.</p>
+      </div>
+    </div>
+    <div class="feat-card reveal reveal-delay-2">
+      <div class="feat-icon" style="background:rgba(251,146,60,.12);color:#fb923c">📊</div>
+      <div class="feat-body">
+        <h4>Live Dashboard Stats</h4>
+        <p>Real vs Fake breakdown updates in real-time with every scan you perform.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Enhanced Footer -->
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <strong>VeriScan AI</strong>
+      <p>Powered by TF-IDF + Logistic Regression &bull; Trained on 44,898 articles &bull; 98.8% Accuracy</p>
+    </div>
+    <div class="footer-links">
+      <a href="https://www.altnews.in" target="_blank">Alt News</a>
+      <a href="https://www.snopes.com" target="_blank">Snopes</a>
+      <a href="https://www.reuters.com/fact-check" target="_blank">Reuters FC</a>
+      <a href="https://factly.in" target="_blank">Factly</a>
+      <a href="https://newsapi.org" target="_blank">NewsAPI</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── API base: auto-detect local vs deployed ── */
+const API = (location.protocol === 'file:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'http://127.0.0.1:5000'
+  : '';   // same origin when deployed
+/* ── Static Bubble Particles (bg decoration) ── */
+(function(){
+  const c=document.getElementById('particles');
+  c.style.cssText='position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none';
+  const colors=['#818cf8','#c084fc','#34d399','#f472b6','#38bdf8','#fb923c'];
+  for(let i=0;i<18;i++){
+    const p=document.createElement('div');p.className='particle';
+    const s=Math.random()*12+4;
+    const col=colors[Math.floor(Math.random()*colors.length)];
+    Object.assign(p.style,{
+      width:s+'px',height:s+'px',left:Math.random()*100+'%',
+      color:col,
+      background:`radial-gradient(circle at 35% 35%,rgba(255,255,255,.4),${col}55 40%,${col}22)`,
+      border:`1px solid ${col}44`,
+      animationDuration:(Math.random()*18+10)+'s',
+      animationDelay:(Math.random()*12)+'s'
+    });
+    c.appendChild(p);
+  }
+})();
+
+/* ══════════════════════════════════════════
+   Physics Particle System — Full Rewrite
+   • Real mass / gravity / air-drag physics
+   • Dual cursor zone: attract (far) / repel (near)
+   • Particle trails via fade clear
+   • Click = shockwave ring + burst explosion
+   • Glowing multi-stop radial gradient dots
+   • Faint constellation connection lines
+   • Mobile-safe: half particle count on narrow screens
+══════════════════════════════════════════ */
+(function(){
+  const canvas = document.getElementById('particleCanvas');
+  const ctx    = canvas.getContext('2d', {alpha:true});
+
+  /* ── Palette ── */
+  const PALETTE = [
+    {color:'#818cf8', glow:'rgba(129,140,248,'},
+    {color:'#c084fc', glow:'rgba(192,132,252,'},
+    {color:'#34d399', glow:'rgba(52,211,153,'},
+    {color:'#f472b6', glow:'rgba(244,114,182,'},
+    {color:'#38bdf8', glow:'rgba(56,189,248,'},
+    {color:'#fb923c', glow:'rgba(251,146,60,'},
+    {color:'#a78bfa', glow:'rgba(167,139,250,'},
+    {color:'#6ee7b7', glow:'rgba(110,231,183,'},
+  ];
+
+  const isMobile   = window.innerWidth < 768;
+  const COUNT      = isMobile ? 50 : 100;
+  const CONNECT_SQ = isMobile ? 7056 : 12100;  // 84² or 110²
+  const ATTRACT_R  = 200;   // px — cursor pulls particles toward it
+  const REPEL_R    = 80;    // px — cursor pushes them away when very close
+  const ATTRACT_F  = 0.18;
+  const REPEL_F    = 6.0;
+  const GRAVITY    = 0.012; // gentle downward drift
+  const DRAG       = 0.980; // air resistance per frame
+  const MAX_V      = 3.5;
+  const BURST_N    = isMobile ? 10 : 18;
+
+  let W, H, frame = 0;
+  let mouse = {x:-9999, y:-9999};
+  let particles = [], rings = [];
+
+  /* resize */
+  function resize(){
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize, {passive:true});
+
+  /* ── Particle class ── */
+  class Particle {
+    constructor(x, y, isBurst){
+      const pal      = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+      this.color     = pal.color;
+      this.glow      = pal.glow;
+      this.x         = (x !== undefined) ? x : Math.random() * W;
+      this.y         = (y !== undefined) ? y : Math.random() * H;
+      this.mass      = Math.random() * 1.5 + 0.5;            // 0.5 – 2
+      this.r         = isBurst ? this.mass * 2 + 1 : this.mass * 1.8 + 1;
+      this.baseAlpha = isBurst ? 0.92 : Math.random() * 0.5 + 0.25;
+      this.alpha     = this.baseAlpha;
+      this.vx        = (Math.random() - 0.5) * (isBurst ? 7 : 1.4);
+      this.vy        = (Math.random() - 0.5) * (isBurst ? 7 : 1.0) + (isBurst ? -2 : 0);
+      this.life      = isBurst ? 1 : null;
+      this.decay     = isBurst ? Math.random() * 0.022 + 0.014 : 0;
+      this.isBurst   = !!isBurst;
+      this.pulse     = Math.random() * Math.PI * 2;   // phase for breathing glow
+    }
+
+    update(){
+      this.pulse += 0.04;
+
+      /* gravity (lighter particles float more) */
+      if(!this.isBurst) this.vy += GRAVITY / this.mass;
+
+      /* cursor physics */
+      const dx = mouse.x - this.x;
+      const dy = mouse.y - this.y;
+      const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+
+      if(dist < REPEL_R){
+        /* very close → push away hard */
+        const f = (REPEL_R - dist) / REPEL_R * REPEL_F / this.mass;
+        this.vx -= dx / dist * f * 0.15;
+        this.vy -= dy / dist * f * 0.15;
+      } else if(dist < ATTRACT_R && !this.isBurst){
+        /* medium range → gentle magnetic pull */
+        const f = (1 - dist / ATTRACT_R) * ATTRACT_F / this.mass;
+        this.vx += dx / dist * f;
+        this.vy += dy / dist * f;
+      }
+
+      /* drag */
+      this.vx *= DRAG;
+      this.vy *= DRAG;
+
+      /* speed cap */
+      const spd = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+      const lim  = this.isBurst ? MAX_V * 2 : MAX_V;
+      if(spd > lim){ this.vx = this.vx/spd*lim; this.vy = this.vy/spd*lim; }
+
+      /* random jitter when almost stopped */
+      if(!this.isBurst && spd < 0.25){
+        this.vx += (Math.random() - 0.5) * 0.06;
+        this.vy += (Math.random() - 0.5) * 0.06;
+      }
+
+      this.x += this.vx;
+      this.y += this.vy;
+
+      /* wrap edges */
+      if(this.x < -12) this.x = W + 12;
+      if(this.x > W+12) this.x = -12;
+      if(this.y < -12) this.y = H + 12;
+      if(this.y > H+12) this.y = -12;
+
+      /* burst fade */
+      if(this.isBurst){
+        this.life  -= this.decay;
+        this.alpha  = Math.max(0, this.life * 0.88);
+      } else {
+        /* breathing glow */
+        this.alpha = this.baseAlpha + Math.sin(this.pulse) * 0.08;
+      }
+    }
+
+    draw(){
+      const r = this.r + Math.sin(this.pulse) * 0.5;
+      ctx.save();
+      ctx.globalAlpha = Math.min(this.alpha, 1);
+
+      /* outer glow halo */
+      const halo = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4.5);
+      halo.addColorStop(0, this.glow + '0.28)');
+      halo.addColorStop(1, this.glow + '0)');
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 4.5, 0, Math.PI*2);
+      ctx.fillStyle = halo;
+      ctx.fill();
+
+      /* core dot */
+      const core = ctx.createRadialGradient(
+        this.x - r * 0.35, this.y - r * 0.35, 0,
+        this.x, this.y, r * 1.8
+      );
+      core.addColorStop(0, 'rgba(255,255,255,0.98)');
+      core.addColorStop(0.35, this.color + 'dd');
+      core.addColorStop(0.75, this.color + '55');
+      core.addColorStop(1,   this.color + '00');
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 1.8, 0, Math.PI*2);
+      ctx.fillStyle = core;
+      ctx.fill();
+
+      ctx.restore();
+    }
+  }
+
+  /* ── Shockwave ring ── */
+  class Ring {
+    constructor(x, y){
+      this.x = x; this.y = y;
+      this.r = 4; this.life = 1;
+      const pal = PALETTE[Math.floor(Math.random()*PALETTE.length)];
+      this.glow = pal.glow;
+    }
+    update(){ this.r += 4; this.life -= 0.045; }
+    draw(){
+      ctx.save();
+      ctx.globalAlpha = this.life * 0.6;
+      ctx.strokeStyle = this.glow + '0.9)';
+      ctx.lineWidth   = 2.5 * this.life;
+      ctx.shadowBlur  = 12;
+      ctx.shadowColor = this.glow + '0.7)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    get dead(){ return this.life <= 0; }
+  }
+
+  /* ── Init ── */
+  function init(){
+    particles = [];
+    for(let i = 0; i < COUNT; i++) particles.push(new Particle());
+  }
+
+  /* ── Burst on click/touch ── */
+  function burst(x, y){
+    rings.push(new Ring(x, y));
+    rings.push(new Ring(x, y));    // double ring for drama
+    for(let i = 0; i < BURST_N; i++) particles.push(new Particle(x, y, true));
+  }
+
+  /* ── Connection lines ── */
+  function drawConnections(){
+    const n = particles.length;
+    for(let i = 0; i < n; i++){
+      const pi = particles[i];
+      if(pi.isBurst || pi.alpha < 0.05) continue;
+      for(let j = i+1; j < n; j++){
+        const pj = particles[j];
+        if(pj.isBurst) continue;
+        const dx = pi.x - pj.x, dy = pi.y - pj.y;
+        const dSq = dx*dx + dy*dy;
+        if(dSq < CONNECT_SQ){
+          const t = 1 - dSq / CONNECT_SQ;
+          ctx.save();
+          ctx.globalAlpha = t * 0.22;
+          ctx.lineWidth   = t * 1.2;
+          ctx.strokeStyle = pi.color;
+          ctx.beginPath();
+          ctx.moveTo(pi.x, pi.y);
+          ctx.lineTo(pj.x, pj.y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
+  }
+
+  /* ── Main loop ── */
+  function animate(){
+    frame++;
+    /* slight trail: don't full-clear, overlay dark transparent rect → motion blur */
+    ctx.clearRect(0, 0, W, H);
+
+    /* connections every 2nd frame */
+    if(frame % 2 === 0) drawConnections();
+
+    /* update + draw rings */
+    rings = rings.filter(rg => !rg.dead);
+    rings.forEach(rg => { rg.update(); rg.draw(); });
+
+    /* update + draw particles */
+    for(let i = 0; i < particles.length; i++){
+      particles[i].update();
+      particles[i].draw();
+    }
+
+    /* purge dead burst particles every 30 frames */
+    if(frame % 30 === 0) particles = particles.filter(p => !p.isBurst || p.life > 0);
+
+    requestAnimationFrame(animate);
+  }
+
+  init();
+  animate();
+
+  /* ── Input ── */
+  document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; }, {passive:true});
+  document.addEventListener('mouseleave', () => { mouse.x = -9999; mouse.y = -9999; }, {passive:true});
+  document.addEventListener('click', e => {
+    if(['BUTTON','A','INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    burst(e.clientX, e.clientY);
+  }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY;
+  }, {passive:true});
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0]; mouse.x = t.clientX; mouse.y = t.clientY;
+    if(!['BUTTON','A','INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) burst(t.clientX, t.clientY);
+  }, {passive:true});
+  document.addEventListener('touchend', () => { mouse.x = -9999; mouse.y = -9999; }, {passive:true});
+})();
+
+/* ── State ── */
+let stats={total:0,real:0,fake:0,live:0};
+const history=[];
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=stats.total;
+  document.getElementById('statReal').textContent=stats.real;
+  document.getElementById('statFake').textContent=stats.fake;
+  document.getElementById('statLive').textContent=stats.live;
+  // Real vs Fake bar in stats
+  const pct=stats.total>0?Math.round(stats.real/stats.total*100):50;
+  document.getElementById('realBar').style.width=pct+'%';
+  document.getElementById('realPct').textContent=stats.total>0?pct+'% Real':'—';
+  // Donut chart
+  const circ=94;
+  const filled=stats.total>0?(stats.real/stats.total)*circ:0;
+  document.getElementById('donutReal').setAttribute('stroke-dasharray',filled+' '+circ);
+  document.getElementById('donutPct').textContent=stats.total>0?pct+'%':'—';
+  // Breakdown bars
+  const rp=stats.total>0?(stats.real/stats.total*100):0;
+  const fp=stats.total>0?(stats.fake/stats.total*100):0;
+  document.getElementById('realBarD').style.width=rp+'%';
+  document.getElementById('fakeBarD').style.width=fp+'%';
+  document.getElementById('donutRealN').textContent=stats.real;
+  document.getElementById('donutFakeN').textContent=stats.fake;
+}
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// Auto-load India news on page start so sidebar isn't empty
+window.addEventListener('load',()=>setTimeout(()=>checkLive('india'),600));
+
+function pushHistory(text,label){
+  history.unshift({text,label,time:new Date().toLocaleTimeString()});
+  if(history.length>8)history.pop();
+  const el=document.getElementById('historyList');
+  el.innerHTML=history.map(h=>`
+    <div class="history-item">
+      <span class="history-label" style="color:${h.label==='Real'?'var(--accent2)':'var(--danger)'}">${h.label}</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:8px">${h.time}</span>
+      <div class="history-text">${esc(h.text)}</div>
+    </div>`).join('');
+}
+
+/* ── Manual Check ── */
+async function checkManual(){
+  const text=document.getElementById('newsInput').value.trim();
+  const out=document.getElementById('manualResult');
+  if(!text){
+    out.innerHTML=`<div class="result-box"><div class="result-card loading"><div class="result-badge" style="background:rgba(248,113,113,.12);color:var(--danger);font-size:20px">!</div><div class="result-info"><h3>Empty Input</h3><p>Please paste some text to analyze.</p></div></div></div>`;
+    return;
+  }
+  out.innerHTML=`<div class="result-box"><div class="result-card loading"><div class="result-badge badge-load">⟳</div><div class="result-info"><h3>Analyzing...</h3><p>Running ML inference on your text</p></div></div></div>`;
+  try{
+    const res=await fetch(`${API}/predict`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});
+    const data=await res.json();
+    const isReal=(data.prediction||'').toLowerCase().includes('real');
+    const label=isReal?'Real':'Fake';
+    stats.total++;stats[isReal?'real':'fake']++;updateStats();
+    pushHistory(text,label);
+    out.innerHTML=`<div class="result-box"><div class="result-card ${isReal?'real':'fake'}"><div class="result-badge ${isReal?'badge-real':'badge-fake'}">${isReal?'✓':'✕'}</div><div class="result-info"><h3>${data.prediction}</h3><p>Analysis complete &bull; ${new Date().toLocaleTimeString()}</p></div></div></div>`;
+  }catch(e){
+    out.innerHTML=`<div class="result-box"><div class="result-card fake"><div class="result-badge badge-fake">⚠</div><div class="result-info"><h3>Server Unreachable</h3><p>Start app.py and ensure Flask is running on port 5000</p></div></div></div>`;
+  }
+}
+
+/* ── Live Search ── */
+async function checkLive(forceTopic){
+  const q=forceTopic||document.getElementById('queryInput').value.trim()||'india';
+  if(forceTopic) document.getElementById('queryInput').value=forceTopic;
+  const list=document.getElementById('newsList');
+  const empty=document.getElementById('newsEmpty');
+  list.innerHTML=`<div class="empty"><div class="empty-icon" style="animation:spin 1.2s linear infinite">⟳</div>Searching live headlines...</div>`;
+  empty.style.display='none';
+  try{
+    const res=await fetch(`${API}/live`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q})});
+    const data=await res.json();
+    if(data.error){
+      list.innerHTML=`<div class="empty"><div class="empty-icon">⚠</div>${esc(data.error)}</div>`;
+      return;
+    }
+    if(!data.articles||data.articles.length===0){
+      list.innerHTML=`<div class="empty"><div class="empty-icon">📭</div>No headlines found. Try broader keywords.</div>`;
+      return;
+    }
+    stats.live=data.articles.length;stats.total+=data.articles.length;
+    data.articles.forEach(a=>{const isR=(a.prediction||'').toLowerCase()==='real';stats[isR?'real':'fake']++});
+    updateStats();
+    list.innerHTML='';
+    data.articles.forEach((a,i)=>{
+      const card=document.createElement('div');card.className='news-card';
+      card.style.animationDelay=(i*80)+'ms';card.style.animation='slideIn .4s ease both';
+      const isR=(a.prediction||'').toLowerCase()==='real';
+      card.innerHTML=`
+        <img class="news-thumb" src="${a.image||''}" onerror="this.style.background='linear-gradient(135deg,#1a1a2e,#16213e)';this.style.display='flex'" alt="">
+        <div class="news-body">
+          <h4>${esc(a.title||'Untitled')}</h4>
+          <p>${esc((a.description||'').slice(0,100))}${(a.description||'').length>100?'...':''}</p>
+          <div class="news-meta">
+            <span class="news-tag ${isR?'tag-real':'tag-fake'}">${a.prediction||'Unknown'}</span>
+            <a class="news-link" href="${a.url||'#'}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Open →</a>
+          </div>
+        </div>`;
+      card.onclick=()=>window.open(a.url,'_blank');
+      list.appendChild(card);
+    });
+  }catch(e){
+    list.innerHTML=`<div class="empty"><div class="empty-icon">⚠</div>Error — is app.py running?</div>`;
+  }
+}
+
+/* ── Quick Search (topic chips) ── */
+function quickSearch(topic){
+  document.getElementById('queryInput').value=topic;
+  checkLive();
+}
+
+/* ── Demo card tester ── */
+const SAMPLE_REAL="The Indian government announced a new solar energy policy today in New Delhi. The Finance Minister presented guidelines that will benefit thousands of companies. Industry leaders welcomed the move as a step towards clean energy goals.";
+const SAMPLE_FAKE="SHOCKING: Scientists confirm the moon landing was staged by NASA in a Hollywood studio! Whistleblower leaked documents prove decades-long government cover-up. Share before they delete this!!!";
+
+async function demoTest(type){
+  const targets={real:{card:'demoCardReal',res:'demoResReal',q:SAMPLE_REAL},fake:{card:'demoCardFake',res:'demoResFake',q:SAMPLE_FAKE},live:{card:'demoCardLive',res:'demoResLive'}};
+  const t=targets[type];
+  const resEl=document.getElementById(t.res);
+  const cardEl=document.getElementById(t.card);
+  cardEl.style.pointerEvents='none';
+  resEl.innerHTML=`<div style="padding:8px 12px;border-radius:8px;background:var(--surface2);font-size:11px;color:var(--muted);animation:spin 1s linear infinite;display:inline-block">⟳ Analyzing...</div>`;
+  if(type==='live'){
+    try{
+      const r=await fetch(`${API}/live`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'india'})});
+      const d=await r.json();
+      const arts=(d.articles||[]).slice(0,3);
+      resEl.innerHTML=arts.map(a=>{
+        const isR=(a.prediction||'').toLowerCase()==='real';
+        return `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px">
+          <span style="padding:2px 7px;border-radius:5px;font-weight:700;background:${isR?'rgba(52,211,153,.12)':'rgba(248,113,113,.12)'};color:${isR?'var(--accent2)':'var(--danger)'}">${a.prediction}</span>
+          <span style="color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${a.title||''}</span>
+        </div>`;
+      }).join('')||'<div style="color:var(--muted);font-size:11px">No results</div>';
+      if(arts.length){arts.forEach(a=>{const isR=(a.prediction||'').toLowerCase()==='real';stats.total++;stats[isR?'real':'fake']++;});stats.live+=arts.length;updateStats();}
+    }catch(e){resEl.innerHTML=`<div style="color:var(--danger);font-size:11px">⚠ API not reachable. Start app.py first.</div>`;}
+  } else {
+    try{
+      const r=await fetch(`${API}/predict`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t.q})});
+      const d=await r.json();
+      const isReal=(d.prediction||'').toLowerCase().includes('real');
+      const correct=(type==='real'&&isReal)||(type==='fake'&&!isReal);
+      resEl.innerHTML=`
+        <div style="padding:10px 14px;border-radius:10px;border:1px solid ${isReal?'rgba(52,211,153,.3)':'rgba(248,113,113,.3)'};background:${isReal?'rgba(52,211,153,.06)':'rgba(248,113,113,.06)'};margin-top:4px">
+          <div style="font-size:15px;font-weight:800;color:${isReal?'var(--accent2)':'var(--danger)'}">${isReal?'✓ Real News':'✕ Fake News'}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:3px">AI Verdict • ${correct?'✅ Correct!':'❌ Needs review'}</div>
+        </div>`;
+      stats.total++;stats[isReal?'real':'fake']++;updateStats();
+      pushHistory(t.q,isReal?'Real':'Fake');
+    }catch(e){resEl.innerHTML=`<div style="color:var(--danger);font-size:11px">⚠ API not reachable. Start app.py first.</div>`;}
+  }
+  setTimeout(()=>cardEl.style.pointerEvents='',3000);
+}
+
+/* ── Scroll Reveal (IntersectionObserver) ── */
+(function(){
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:0.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+})();
+
+/* ── Native smooth scroll — no JS hijack needed ── */
+// Browser handles scroll natively (css scroll-behavior:smooth already set)
+// We just sync the sidebar scroll position for reveal
+document.addEventListener('scroll',()=>{
+  document.documentElement.style.setProperty('--scroll',window.scrollY+'px');
+},{passive:true});
+</script>
+</body>
+</html>
